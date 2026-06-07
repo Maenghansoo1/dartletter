@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DartLetter · DART 공시를 AI가 쉽게 풀어주는 기업 분석 앱</title>
+  <meta name="description" content="난해한 DART 공시를 Gemini AI가 쉬운 말로 번역하고, 뉴스·재무지표·커뮤니티까지 한 화면에서 연결하는 일반 투자자를 위한 기업 분석 앱." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:    #0a0e1a;
+      --ink-2:  #0f1628;
+      --card:   #141d33;
+      --card-2: #1a2540;
+      --line:   #243150;
+      --brand:  #3b82f6;
+      --brand-2:#60a5fa;
+      --accent: #22d3ee;
+      --mint:   #34d399;
+      --amber:  #fbbf24;
+      --rose:   #fb7185;
+      --muted:  #94a3b8;
+      --fg:     #e8eefc;
+    }
+
+    html { scroll-behavior: smooth; font-size: 28px; }
+
+    body {
+      background: var(--ink);
+      color: var(--fg);
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      word-break: keep-all;
+    }
+
+    a { text-decoration: none; color: inherit; }
+
+    /* ── animations ── */
+    @keyframes float-up {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal { animation: float-up 0.7s ease both; }
+
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.5; }
+      50%       { opacity: 1; }
+    }
+    .glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+    @keyframes drift {
+      0%, 100% { transform: translate(0, 0); }
+      50%       { transform: translate(20px, -20px); }
+    }
+    .drift { animation: drift 14s ease-in-out infinite; }
+
+    /* ── layout helpers ── */
+    .max-w-6xl { max-width: 72rem; margin-left: auto; margin-right: auto; }
+    .max-w-3xl { max-width: 48rem; margin-left: auto; margin-right: auto; }
+    .max-w-2xl { max-width: 42rem; margin-left: auto; margin-right: auto; }
+    .px-6  { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .py-10 { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+    .py-24 { padding-top: 6rem;   padding-bottom: 6rem; }
+    .py-28 { padding-top: 7rem;   padding-bottom: 7rem; }
+    .pt-40 { padding-top: 10rem; }
+    .pb-28 { padding-bottom: 7rem; }
+    .mt-2  { margin-top: .5rem; }
+    .mt-3  { margin-top: .75rem; }
+    .mt-4  { margin-top: 1rem; }
+    .mt-5  { margin-top: 1.25rem; }
+    .mt-6  { margin-top: 1.5rem; }
+    .mt-7  { margin-top: 1.75rem; }
+    .mt-8  { margin-top: 2rem; }
+    .mt-9  { margin-top: 2.25rem; }
+    .mt-10 { margin-top: 2.5rem; }
+    .mt-12 { margin-top: 3rem; }
+    .mt-14 { margin-top: 3.5rem; }
+    .mt-16 { margin-top: 4rem; }
+    .mt-1  { margin-top: .25rem; }
+    .mt-1\.5 { margin-top: .375rem; }
+    .mt-2\.5 { margin-top: .625rem; }
+    .mb-3  { margin-bottom: .75rem; }
+    .mb-4  { margin-bottom: 1rem; }
+    .mb-6  { margin-bottom: 1.5rem; }
+
+    /* ── nav ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      backdrop-filter: blur(12px);
+      background: color-mix(in srgb, var(--ink) 70%, transparent);
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+    }
+    nav {
+      height: 4rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: .625rem; }
+    .logo-icon {
+      width: 2.25rem; height: 2.25rem; border-radius: .75rem;
+      background: linear-gradient(135deg, var(--brand), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; color: var(--ink); font-size: 1.125rem;
+    }
+    .logo-text { font-weight: 700; font-size: 1.125rem; letter-spacing: -.025em; }
+    .nav-links { display: none; gap: 1.75rem; font-size: .875rem; color: var(--muted); }
+    @media (min-width: 768px) { .nav-links { display: flex; } }
+    .nav-links a:hover { color: #fff; transition: color .2s; }
+    .badge {
+      font-size: .75rem; font-weight: 600;
+      padding: .375rem .75rem; border-radius: 9999px;
+      background: color-mix(in srgb, var(--brand) 15%, transparent);
+      color: var(--brand-2);
+      border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
+    }
+
+    /* ── hero ── */
+    .hero { position: relative; }
+    .blob {
+      position: absolute; border-radius: 50%;
+      filter: blur(120px); pointer-events: none;
+    }
+    .blob-1 { top:5rem; left:-5rem; width:24rem; height:24rem; background: color-mix(in srgb,var(--brand) 20%,transparent); }
+    .blob-2 { bottom:0; right:0;   width:24rem; height:24rem; background: color-mix(in srgb,var(--accent) 15%,transparent); animation-delay:-7s; }
+    .hero-inner { position: relative; text-align: center; }
+    .eyebrow-accent {
+      display: inline-block; font-size: .875rem; font-weight: 600; color: var(--accent);
+      margin-bottom: 1.5rem; padding: .375rem 1rem; border-radius: 9999px;
+      border: 1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+      background: color-mix(in srgb,var(--accent) 10%,transparent);
+    }
+    h1 {
+      font-size: clamp(2.5rem, 7vw, 4.5rem);
+      font-weight: 900; letter-spacing: -.035em; line-height: 1.05;
+    }
+    .grad-text {
+      background: linear-gradient(90deg, var(--brand-2), var(--accent), var(--mint));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-desc {
+      margin-top: 1.75rem; font-size: 1.125rem; color: var(--muted);
+      max-width: 42rem; margin-left: auto; margin-right: auto; line-height: 1.7;
+    }
+    .btn-row { margin-top: 2.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: center; }
+    .btn-primary {
+      padding: .875rem 1.75rem; border-radius: .75rem;
+      background: linear-gradient(90deg, var(--brand), var(--accent));
+      color: var(--ink); font-weight: 700;
+      box-shadow: 0 8px 24px color-mix(in srgb,var(--brand) 30%,transparent);
+      transition: opacity .2s;
+    }
+    .btn-primary:hover { opacity: .9; }
+    .btn-outline {
+      padding: .875rem 1.75rem; border-radius: .75rem;
+      border: 1px solid var(--line); color: #fff; font-weight: 600;
+      transition: background .2s;
+    }
+    .btn-outline:hover { background: var(--card); }
+    .stat-grid {
+      margin-top: 4rem;
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+      max-width: 42rem; margin-left: auto; margin-right: auto;
+    }
+    .stat-card {
+      border-radius: 1rem; padding: 1.25rem;
+      background: color-mix(in srgb,var(--card) 60%,transparent);
+      border: 1px solid color-mix(in srgb,var(--line) 60%,transparent);
+    }
+    .stat-n {
+      font-size: 1.875rem; font-weight: 900;
+      background: linear-gradient(90deg, var(--brand-2), var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .stat-l { font-size: .75rem; color: var(--muted); margin-top: .375rem; }
+
+    /* ── section shared ── */
+    section { border-top: 1px solid color-mix(in srgb,var(--line) 40%,transparent); }
+    .section-alt { background: color-mix(in srgb,var(--ink-2) 50%,transparent); }
+    .section-title { text-align: center; max-width: 42rem; margin-left: auto; margin-right: auto; }
+    .section-eyebrow { font-size: .75rem; font-weight: 700; letter-spacing: .1em; color: var(--accent); }
+    h2 {
+      font-size: clamp(1.875rem, 4vw, 3rem);
+      font-weight: 900; letter-spacing: -.025em; margin-top: .75rem;
+    }
+    .section-desc { color: var(--muted); margin-top: 1rem; line-height: 1.7; }
+
+    /* ── card grids ── */
+    .grid-4 { display: grid; gap: 1.25rem; grid-template-columns: 1fr; }
+    @media (min-width: 640px) { .grid-4 { grid-template-columns: repeat(2,1fr); } }
+    @media (min-width: 1024px){ .grid-4 { grid-template-columns: repeat(4,1fr); } }
+
+    .grid-3 { display: grid; gap: 1.25rem; grid-template-columns: 1fr; }
+    @media (min-width: 768px) { .grid-3 { grid-template-columns: repeat(3,1fr); } }
+
+    .grid-2 { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+    @media (min-width: 768px) { .grid-2 { grid-template-columns: repeat(2,1fr); } }
+
+    .card {
+      border-radius: 1rem; border: 1px solid color-mix(in srgb,var(--line) 60%,transparent);
+      background: var(--card); padding: 1.5rem;
+      transition: border-color .2s, transform .2s;
+    }
+    .card:hover { border-color: color-mix(in srgb,var(--brand) 50%,transparent); transform: translateY(-4px); }
+    .card-icon { font-size: 2.25rem; }
+    .card-title { font-weight: 700; font-size: 1.125rem; margin-top: 1rem; }
+    .card-desc  { font-size: .875rem; color: var(--muted); margin-top: .625rem; line-height: 1.6; word-break: keep-all; }
+
+    /* ── problem cards ── */
+    .prob-card {
+      border-radius: 1rem; border: 1px solid color-mix(in srgb,var(--line) 60%,transparent);
+      background: var(--card); padding: 1.75rem;
+      display: flex; flex-direction: column;
+    }
+    .prob-num { color: var(--rose); font-weight: 900; font-size: .875rem; }
+    .prob-title { font-weight: 700; font-size: 1.25rem; margin-top: .5rem; }
+    .prob-q { font-size: .875rem; color: color-mix(in srgb,var(--brand-2) 90%,transparent); margin-top: 1rem; font-style: italic; line-height: 1.6; }
+    .prob-d { font-size: .875rem; color: var(--muted); margin-top: .75rem; line-height: 1.6; flex: 1; }
+    .prob-stat { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid color-mix(in srgb,var(--line) 60%,transparent); }
+    .prob-stat-n { font-size: 1.5rem; font-weight: 900; color: var(--rose); }
+    .prob-stat-l { font-size: .75rem; color: var(--muted); margin-top: .25rem; }
+
+    /* ── solution steps ── */
+    .step-card {
+      position: relative; border-radius: 1rem; padding: 1.5rem;
+      background: linear-gradient(180deg, var(--card-2), var(--card));
+      border: 1px solid color-mix(in srgb,var(--line) 60%,transparent);
+    }
+    .step-header { display: flex; align-items: center; justify-content: space-between; }
+    .step-n { font-size: 1.875rem; font-weight: 900; color: color-mix(in srgb,var(--brand) 40%,transparent); }
+    .step-tag {
+      font-size: .75rem; font-weight: 700; padding: .25rem .75rem; border-radius: 9999px;
+      background: color-mix(in srgb,var(--accent) 15%,transparent); color: var(--accent);
+      border: 1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+    }
+    .step-title { font-weight: 700; margin-top: 1rem; line-height: 1.4; }
+    .step-desc  { font-size: .875rem; color: var(--muted); margin-top: .625rem; line-height: 1.6; }
+
+    /* ── arch ── */
+    .arch-card { border-radius: 1rem; border: 1px solid color-mix(in srgb,var(--line) 60%,transparent); background: var(--card); padding: 1.5rem; transition: border-color .2s; }
+    .arch-card:hover { border-color: color-mix(in srgb,var(--brand) 50%,transparent); }
+    .arch-tag { font-size: .6875rem; font-weight: 700; letter-spacing: .1em; color: var(--muted); }
+    .arch-title { font-size: 1.25rem; font-weight: 900; margin-top: .5rem; }
+    .arch-desc  { font-size: .875rem; color: var(--muted); margin-top: .75rem; line-height: 1.6; }
+    .reason-box {
+      margin-top: 2rem; border-radius: 1rem; padding: 1.5rem;
+      background: color-mix(in srgb,var(--brand) 10%,transparent);
+      border: 1px solid color-mix(in srgb,var(--brand) 30%,transparent);
+    }
+    .reason-title { font-weight: 700; color: var(--brand-2); margin-bottom: .75rem; }
+    .reason-grid { display: grid; gap: .5rem 2rem; font-size: .875rem; color: var(--muted); }
+    @media (min-width: 640px) { .reason-grid { grid-template-columns: repeat(2,1fr); } }
+
+    /* ── dataflow ── */
+    .flow-nodes { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .75rem; font-size: .875rem; font-weight: 600; }
+    .flow-node { padding: .75rem 1.25rem; border-radius: .75rem; background: var(--card); border: 1px solid color-mix(in srgb,var(--line) 60%,transparent); color: var(--brand-2); }
+    .flow-arrow { color: var(--accent); font-size: 1.125rem; }
+    .flow-item { border-radius: .75rem; background: color-mix(in srgb,var(--card) 60%,transparent); border: 1px solid color-mix(in srgb,var(--line) 60%,transparent); padding: 1.25rem; display: flex; gap: 1rem; align-items: flex-start; }
+    .flow-arrow-sm { color: var(--accent); margin-top: .125rem; }
+    .flow-label { font-weight: 700; font-size: .875rem; }
+    .flow-desc  { font-size: .875rem; color: var(--muted); margin-top: .25rem; }
+
+    /* ── roadmap ── */
+    .roadmap-scroll { overflow-x: auto; }
+    .roadmap-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: .75rem; min-width: 820px; }
+    .week-card {
+      border-radius: 1rem; border: 1px solid color-mix(in srgb,var(--line) 60%,transparent);
+      background: var(--card); padding: 1rem;
+    }
+    .week-card.current { background: color-mix(in srgb,var(--brand) 15%,transparent); border-color: color-mix(in srgb,var(--brand) 60%,transparent); }
+    .week-label { font-size: .75rem; font-weight: 900; color: var(--muted); }
+    .week-card.current .week-label { color: var(--brand-2); }
+    .week-title { font-weight: 700; font-size: .875rem; margin-top: .25rem; line-height: 1.3; }
+    .week-items { margin-top: .75rem; display: flex; flex-direction: column; gap: .375rem; list-style: none; }
+    .week-items li { font-size: .75rem; color: var(--muted); display: flex; gap: .375rem; }
+    .week-items li .dot { color: color-mix(in srgb,var(--line) 100%,transparent); }
+    .week-card.current .week-items li .dot { color: var(--brand-2); }
+
+    /* ── CTA ── */
+    .cta-section { position: relative; overflow: hidden; }
+    .cta-gradient { position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in srgb,var(--brand) 10%,transparent), transparent); }
+    .cta-inner { position: relative; text-align: center; }
+    .cta-tags { margin-top: 2.25rem; display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; }
+    .cta-tag { font-size: .875rem; padding: .5rem 1rem; border-radius: 9999px; background: var(--card); border: 1px solid color-mix(in srgb,var(--line) 60%,transparent); color: var(--muted); }
+
+    /* ── footer ── */
+    footer { border-top: 1px solid color-mix(in srgb,var(--line) 40%,transparent); padding: 2.5rem 1.5rem; }
+    .footer-inner { display: flex; flex-direction: column; align-items: center; gap: 1rem; font-size: .875rem; color: var(--muted); }
+    @media (min-width: 640px) { .footer-inner { flex-direction: row; justify-content: space-between; } }
+    .footer-logo { display: flex; align-items: center; gap: .625rem; }
+    .footer-icon { width: 1.75rem; height: 1.75rem; border-radius: .5rem; background: linear-gradient(135deg,var(--brand),var(--accent)); display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--ink); font-size: .875rem; }
+    .footer-name { font-weight: 700; color: #fff; }
+
+    /* ── gradient text helpers ── */
+    .g-brand     { background: linear-gradient(90deg,var(--brand),var(--brand-2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .g-mint      { background: linear-gradient(90deg,var(--mint),#6ee7b7);          -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .g-accent    { background: linear-gradient(90deg,var(--accent),#67e8f9);         -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .g-amber     { background: linear-gradient(90deg,var(--amber),#fde68a);          -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .g-rose      { background: linear-gradient(90deg,var(--rose),#fda4af);           -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .g-violet    { background: linear-gradient(90deg,#a78bfa,#c4b5fd);               -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .g-hero      { background: linear-gradient(90deg,var(--brand-2),var(--accent),var(--mint)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .g-cta       { background: linear-gradient(90deg,var(--brand-2),var(--accent));  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+    .c-brand-2 { color: var(--brand-2); }
+    .c-accent  { color: var(--accent); }
+    .c-mint    { color: var(--mint); }
+    .c-amber   { color: var(--amber); }
+    .c-rose    { color: var(--rose); }
+
+    /* ── presentation mode ── */
+    body { overflow: hidden; }
+
+    #slides {
+      height: 100vh;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+    }
+    #slides::-webkit-scrollbar { display: none; }
+
+    #slides > section {
+      height: 100vh;
+      scroll-snap-align: start;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center;
+      box-sizing: border-box;
+      padding-top: 5rem !important;
+      padding-bottom: 1.5rem !important;
+      overflow: hidden;
+    }
+
+    #slides > section > * { width: 100%; }
+
+    /* tighter inner margins */
+    #slides .mt-14 { margin-top: 1.25rem !important; }
+    #slides .mt-12 { margin-top: 1rem !important; }
+    #slides .mt-16 { margin-top: 1.25rem !important; }
+    #slides .stat-grid { margin-top: 1.5rem !important; }
+    #slides .btn-row   { margin-top: 1.25rem !important; }
+    #slides .hero-desc { margin-top: 1rem !important; }
+    #slides .section-desc { margin-top: .5rem !important; }
+    #slides h2 { margin-top: .5rem !important; }
+
+    /* roadmap scroll내 최소 너비 유지 */
+    #slides .roadmap-grid { min-width: 700px; }
+
+    /* arch 섹션 압축 */
+    #arch .arch-card { padding: .875rem; }
+    #arch .arch-desc { margin-top: .375rem; font-size: .8rem; }
+    #arch .arch-title { font-size: 1rem; margin-top: .25rem; }
+    #arch .grid-3 { gap: .75rem; }
+
+    /* dataflow 섹션 압축 */
+    #dataflow .flow-nodes { gap: .5rem; }
+    #dataflow .flow-node { padding: .5rem .875rem; font-size: .8rem; }
+    #dataflow .grid-2 { gap: .625rem; }
+    #dataflow .flow-item { padding: .875rem; }
+    #dataflow .flow-label { font-size: .8rem; }
+    #dataflow .flow-desc  { font-size: .75rem; }
+
+    /* slide dots */
+    #slide-dots {
+      position: fixed; right: 1.25rem; top: 50%; transform: translateY(-50%);
+      display: flex; flex-direction: column; gap: .625rem; z-index: 100;
+    }
+    .dot-btn {
+      width: .625rem; height: .625rem; border-radius: 50%;
+      background: color-mix(in srgb, var(--line) 80%, transparent);
+      border: none; cursor: pointer; padding: 0; transition: background .2s, transform .2s;
+    }
+    .dot-btn.active {
+      background: var(--brand-2);
+      transform: scale(1.4);
+    }
+
+    /* slide counter */
+    #slide-counter {
+      position: fixed; bottom: 1.25rem; right: 1.75rem; z-index: 100;
+      font-size: .75rem; color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+
+<!-- SLIDES WRAPPER -->
+<div id="slides">
+
+<!-- COVER -->
+<section class="hero px-6" style="flex-direction:column; text-align:center; position:relative;">
+  <div class="blob blob-1 drift"></div>
+  <div class="blob blob-2 drift"></div>
+  <div style="position:relative; z-index:1;">
+    <div style="display:inline-flex; align-items:center; gap:.75rem; margin-bottom:2rem;">
+      <div class="logo-icon" style="width:3.5rem; height:3.5rem; border-radius:1rem; font-size:1.75rem;">D</div>
+      <span style="font-size:2.5rem; font-weight:900; letter-spacing:-.03em;">DartLetter</span>
+    </div>
+    <h1 style="font-size:clamp(1.25rem,3vw,1.75rem); font-weight:400; color:var(--muted); margin-top:0; letter-spacing:0; line-height:1.6;">
+      DART 공시를 AI가 쉽게 풀어주는<br>일반 투자자를 위한 기업 분석 앱
+    </h1>
+    <div style="margin-top:3rem; display:inline-flex; flex-direction:column; gap:.75rem; align-items:center; padding:1.75rem 3rem; border-radius:1.25rem; background:var(--card); border:1px solid color-mix(in srgb,var(--line) 60%,transparent);">
+      <div style="display:flex; gap:2.5rem; font-size:1rem;">
+        <div style="text-align:left;">
+          <div style="font-size:.75rem; color:var(--muted); letter-spacing:.08em; font-weight:700;">학번</div>
+          <div style="font-weight:700; margin-top:.25rem; color:var(--fg);">2021136065</div>
+        </div>
+        <div style="width:1px; background:color-mix(in srgb,var(--line) 60%,transparent);"></div>
+        <div style="text-align:left;">
+          <div style="font-size:.75rem; color:var(--muted); letter-spacing:.08em; font-weight:700;">발표자</div>
+          <div style="font-weight:700; margin-top:.25rem; color:var(--fg);">맹한수</div>
+        </div>
+        <div style="width:1px; background:color-mix(in srgb,var(--line) 60%,transparent);"></div>
+        <div style="text-align:left;">
+          <div style="font-size:.75rem; color:var(--muted); letter-spacing:.08em; font-weight:700;">구분</div>
+          <div style="font-weight:700; margin-top:.25rem; color:var(--brand-2);">기말프로젝트 중간발표</div>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top:2rem; font-size:.875rem; color:color-mix(in srgb,var(--muted) 60%,transparent);">↓ 방향키로 발표를 시작하세요</p>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section id="problem" class="py-24 px-6 section-alt">
+  <div class="max-w-6xl">
+    <div class="section-title">
+      <span class="section-eyebrow">01 — PROBLEM</span>
+      <h2>문제 정의</h2>
+      <p class="section-desc">일반 투자자가 공시 정보에 접근하기 어려운 3가지 이유</p>
+    </div>
+    <div class="grid-3 mt-14">
+      <div class="prob-card">
+        <span class="prob-num">01</span>
+        <h3 class="prob-title">난해한 공시 언어</h3>
+        <p class="prob-q">"연결재무제표 기준 영업이익 감소에 따른 주요사항보고서"</p>
+        <p class="prob-d">일반인이 이해하기 불가능한 전문용어로 가득함</p>
+        <div class="prob-stat"><div class="prob-stat-n">→ 32페이지</div><div class="prob-stat-l">공시 1건 평균 분량</div></div>
+      </div>
+      <div class="prob-card">
+        <span class="prob-num">02</span>
+        <h3 class="prob-title">정보 접근 장벽</h3>
+        <p class="prob-q">중요한 공시가 올라와도 알림을 받지 못함</p>
+        <p class="prob-d">뉴스와 공시를 따로 찾아봐야 하는 불편함</p>
+        <div class="prob-stat"><div class="prob-stat-n">→ 2.3시간</div><div class="prob-stat-l">공시 확인까지 평균 지연</div></div>
+      </div>
+      <div class="prob-card">
+        <span class="prob-num">03</span>
+        <h3 class="prob-title">분산된 정보</h3>
+        <p class="prob-q">공시는 DART, 뉴스는 포털</p>
+        <p class="prob-d">여러 앱을 오가며 정보를 수집해야 함</p>
+        <div class="prob-stat"><div class="prob-stat-n">→ 47분</div><div class="prob-stat-l">일평균 정보수집 소요</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" class="py-24 px-6">
+  <div class="max-w-6xl">
+    <div class="section-title">
+      <span class="section-eyebrow">02 — KEY FEATURES</span>
+      <h2>핵심 기능</h2>
+      <p class="section-desc">투자자가 필요한 모든 정보를 하나의 앱에서</p>
+    </div>
+    <div class="grid-4 mt-14">
+      <div class="card"><div class="card-icon"></div><h3 class="card-title c-brand-2">AI 공시 해석</h3><p class="card-desc">어려운 DART 공시를 일반 투자자도 이해할 수 있게 AI가 쉬운 말로 풀어서 설명</p></div>
+      <div class="card"><div class="card-icon"></div><h3 class="card-title c-accent">맞춤 알림</h3><p class="card-desc">내가 정한 종목의 주요 공시·뉴스가 올라오면 즉시 푸시 알림</p></div>
+      <div class="card"><div class="card-icon"></div><h3 class="card-title c-mint">관련 뉴스 요약</h3><p class="card-desc">종목 관련 뉴스를 자동 수집하고 3줄로 요약해 핵심만 전달</p></div>
+      <div class="card"><div class="card-icon"></div><h3 class="card-title c-amber">주주 커뮤니티</h3><p class="card-desc">같은 종목에 관심 있는 투자자끼리 정보와 의견을 나누는 공간</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUTION -->
+<section id="solution" class="py-24 px-6">
+  <div class="max-w-6xl">
+    <div class="section-title">
+      <span class="section-eyebrow">03 — SOLUTION</span>
+      <h2>AI가 공시를 번역합니다</h2>
+      <p class="section-desc">DART 원문 수집부터 쉬운 설명까지, 완전 자동화된 4단계 파이프라인</p>
+    </div>
+    <div class="grid-4 mt-14">
+      <div class="step-card">
+        <div class="step-header"><span class="step-n">01</span><span class="step-tag">수집</span></div>
+        <h3 class="step-title">DART 공시 원문 수집</h3>
+        <p class="step-desc">공시 등록 즉시 원문을 자동으로 가져옵니다</p>
+      </div>
+      <div class="step-card">
+        <div class="step-header"><span class="step-n">02</span><span class="step-tag">쉬움</span></div>
+        <h3 class="step-title">Gemini AI 쉬운 말로 해석</h3>
+        <p class="step-desc">비전문가도 이해할 수 있는 말로 풀어서 설명</p>
+      </div>
+      <div class="step-card">
+        <div class="step-header"><span class="step-n">03</span><span class="step-tag">빠름</span></div>
+        <h3 class="step-title">즉시 분석 &amp; 푸시 알림</h3>
+        <p class="step-desc">공시 등록 즉시 AI 분석 완료 후 알림 전송</p>
+      </div>
+      <div class="step-card">
+        <div class="step-header"><span class="step-n">04</span><span class="step-tag">깊음</span></div>
+        <h3 class="step-title">한 화면에 연결</h3>
+        <p class="step-desc">공시·뉴스·재무지표·커뮤니티를 하나로 연결</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCH -->
+<section id="arch" class="py-24 px-6 section-alt">
+  <div class="max-w-6xl">
+    <div class="section-title">
+      <span class="section-eyebrow">04 — ARCHITECTURE</span>
+      <h2>시스템 아키텍처</h2>
+      <p class="section-desc">Flutter + FastAPI + Supabase 기반의 기업 분석 앱 전체 구성도</p>
+    </div>
+    <div class="grid-3 mt-14">
+      <div class="arch-card"><span class="arch-tag">FRONTEND</span><h3 class="arch-title g-brand">Flutter</h3><p class="arch-desc">iOS/Android 동시 개발 · Riverpod 상태관리 · go_router</p></div>
+      <div class="arch-card"><span class="arch-tag">BACKEND</span><h3 class="arch-title g-mint">FastAPI</h3><p class="arch-desc">Python 비동기 API 서버 · DART, 네이버, KRX API 통합</p></div>
+      <div class="arch-card"><span class="arch-tag">DATABASE</span><h3 class="arch-title g-accent">Supabase</h3><p class="arch-desc">PostgreSQL + 인증 + Realtime · RLS로 보안 처리</p></div>
+      <div class="arch-card"><span class="arch-tag">AI</span><h3 class="arch-title g-amber">Gemini API</h3><p class="arch-desc">공시 원문 쉬운 설명 + 3줄 요약 생성</p></div>
+      <div class="arch-card"><span class="arch-tag">DATA API</span><h3 class="arch-title g-rose">DART / 네이버 / KRX</h3><p class="arch-desc">공시 원문, 뉴스, 주가 전부 무료 API 활용</p></div>
+      <div class="arch-card"><span class="arch-tag">NOTIFICATION</span><h3 class="arch-title g-violet">Firebase FCM</h3><p class="arch-desc">공시·뉴스·댓글 알림 푸시</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- DATA FLOW -->
+<section id="dataflow" class="py-24 px-6">
+  <div class="max-w-6xl">
+    <div class="section-title">
+      <span class="section-eyebrow">05 — DATA FLOW</span>
+      <h2>시스템 데이터 흐름도</h2>
+      <p class="section-desc">요청부터 알림까지, 데이터가 흐르는 전체 경로</p>
+    </div>
+    <div class="flow-nodes mt-14">
+      <div class="flow-node">Flutter 앱</div><span class="flow-arrow">→</span>
+      <div class="flow-node">FastAPI 서버</div><span class="flow-arrow">→</span>
+      <div class="flow-node">Supabase DB</div><span class="flow-arrow">→</span>
+      <div class="flow-node">DART / Naver</div><span class="flow-arrow">→</span>
+      <div class="flow-node">Gemini AI</div><span class="flow-arrow">→</span>
+      <div class="flow-node">FCM</div>
+    </div>
+    <div class="grid-2 mt-12">
+      <div class="flow-item"><span class="flow-arrow-sm">▸</span><div><div class="flow-label">Flutter → FastAPI</div><div class="flow-desc">사용자 요청을 HTTPS로 백엔드에 전달</div></div></div>
+      <div class="flow-item"><span class="flow-arrow-sm">▸</span><div><div class="flow-label">FastAPI → DART / 네이버</div><div class="flow-desc">공시 원문·뉴스 수집 후 Supabase에 캐싱</div></div></div>
+      <div class="flow-item"><span class="flow-arrow-sm">▸</span><div><div class="flow-label">FastAPI → Gemini AI</div><div class="flow-desc">공시 원문을 쉬운 설명 + 3줄 요약으로 변환</div></div></div>
+      <div class="flow-item"><span class="flow-arrow-sm">▸</span><div><div class="flow-label">FastAPI → FCM → 앱</div><div class="flow-desc">새 공시·뉴스 감지 시 푸시 알림 전송</div></div></div>
+      <div class="flow-item"><span class="flow-arrow-sm">▸</span><div><div class="flow-label">Supabase Realtime</div><div class="flow-desc">커뮤니티 댓글 실시간 반영</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap" class="py-24 px-6 section-alt">
+  <div class="max-w-6xl">
+    <div class="section-title">
+      <span class="section-eyebrow">06 — ROADMAP</span>
+      <h2>프로젝트 진행 일정</h2>
+      <p class="section-desc">7주 일정으로 진행되는 DartLetter 개발 로드맵</p>
+    </div>
+    <div class="roadmap-scroll mt-14">
+      <div class="roadmap-grid">
+        <div class="week-card">
+          <div class="week-label">1주</div><div class="week-title">주제 선정</div>
+          <ul class="week-items"><li><span class="dot">•</span>아이디어 선정</li><li><span class="dot">•</span>DartLetter 확정</li><li><span class="dot">•</span>핵심기능 정의</li></ul>
+        </div>
+        <div class="week-card">
+          <div class="week-label">2주</div><div class="week-title">기획·WBS</div>
+          <ul class="week-items"><li><span class="dot">•</span>기획서 작성</li><li><span class="dot">•</span>WBS 수립</li><li><span class="dot">•</span>API 목록 확정</li></ul>
+        </div>
+        <div class="week-card">
+          <div class="week-label">3주</div><div class="week-title">설계·환경</div>
+          <ul class="week-items"><li><span class="dot">•</span>아키텍처 설계</li><li><span class="dot">•</span>DB 스키마</li><li><span class="dot">•</span>개발환경 구축</li></ul>
+        </div>
+        <div class="week-card">
+          <div class="week-label">4주</div><div class="week-title">구현1 · 중간발표</div>
+          <ul class="week-items"><li><span class="dot">•</span>DART API 연동</li><li><span class="dot">•</span>뉴스 API 연동</li><li><span class="dot">•</span>중간발표</li></ul>
+        </div>
+        <div class="week-card current glow">
+          <div class="week-label">5주 · 진행중</div><div class="week-title">구현2 · 테스트</div>
+          <ul class="week-items"><li><span class="dot">•</span>Flutter UI</li><li><span class="dot">•</span>AI 공시요약</li><li><span class="dot">•</span>테스트·디버깅</li></ul>
+        </div>
+        <div class="week-card">
+          <div class="week-label">6주</div><div class="week-title">마감·배포</div>
+          <ul class="week-items"><li><span class="dot">•</span>FCM 알림</li><li><span class="dot">•</span>빌드·배포</li><li><span class="dot">•</span>문서화</li></ul>
+        </div>
+        <div class="week-card">
+          <div class="week-label">7주</div><div class="week-title">발표</div>
+          <ul class="week-items"><li><span class="dot">•</span>발표자료</li><li><span class="dot">•</span>앱 시연</li><li><span class="dot">•</span>최종 발표</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section py-28 px-6">
+  <div class="cta-gradient"></div>
+  <div class="max-w-3xl cta-inner">
+    <h2>공시, 이제 <span class="g-cta">쉽게 읽으세요</span></h2>
+    <p class="section-desc" style="margin-top:1.25rem">
+      DartLetter는 일반 투자자가 어려운 공시에서 자유로워지도록 돕습니다.<br>
+      AI 해석 · 맞춤 알림 · 뉴스 요약 · 주주 커뮤니티를 하나로.
+    </p>
+    <div class="cta-tags">
+      <span class="cta-tag">Flutter</span>
+      <span class="cta-tag">FastAPI</span>
+      <span class="cta-tag">Supabase</span>
+      <span class="cta-tag">Gemini AI</span>
+      <span class="cta-tag">Firebase FCM</span>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section class="py-24 px-6 section-alt">
+  <div class="max-w-6xl" style="text-align:center;">
+    <span class="section-eyebrow">APP DEMO</span>
+    <h2 style="margin-bottom:1.5rem;">앱 데모 영상</h2>
+    <video src="demo.mp4" controls muted
+           style="max-height:65vh; max-width:100%; border-radius:1rem; border:1px solid color-mix(in srgb,var(--line) 60%,transparent);">
+    </video>
+  </div>
+</section>
+
+</div><!-- /slides -->
+
+<!-- FOOTER -->
+<footer>
+  <div class="max-w-6xl footer-inner">
+    <div class="footer-logo">
+      <div class="footer-icon">D</div>
+      <span class="footer-name">DartLetter</span>
+    </div>
+    <p>DART 공시를 AI가 쉽게 풀어주는 일반 투자자를 위한 기업 분석 앱 · 기말프로젝트</p>
+  </div>
+</footer>
+
+<!-- slide dots -->
+<nav id="slide-dots"></nav>
+<div id="slide-counter"></div>
+
+<script>
+  const slides = document.querySelectorAll('#slides > section');
+  const dotsNav = document.getElementById('slide-dots');
+  const counter = document.getElementById('slide-counter');
+  let current = 0;
+
+  slides.forEach((_, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'dot-btn' + (i === 0 ? ' active' : '');
+    btn.setAttribute('aria-label', `슬라이드 ${i + 1}`);
+    btn.addEventListener('click', () => goTo(i));
+    dotsNav.appendChild(btn);
+  });
+
+  const siteHeader = document.querySelector('header');
+
+  function updateDots(idx) {
+    document.querySelectorAll('.dot-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+    counter.textContent = `${idx + 1} / ${slides.length}`;
+    siteHeader.style.display = idx === 0 ? 'none' : '';
+  }
+
+  function goTo(idx) {
+    idx = Math.max(0, Math.min(slides.length - 1, idx));
+    slides[idx].scrollIntoView({ behavior: 'smooth' });
+    current = idx;
+    updateDots(idx);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowUp'   || e.key === 'ArrowLeft')  { e.preventDefault(); goTo(current - 1); }
+  });
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        current = Array.from(slides).indexOf(entry.target);
+        updateDots(current);
+      }
+    });
+  }, { root: document.getElementById('slides'), threshold: 0.5 });
+
+  slides.forEach(s => observer.observe(s));
+  updateDots(0);
+
+  function fitSlides() {
+    document.querySelectorAll('#slides > section').forEach(slide => {
+      const inner = Array.from(slide.children).find(
+        el => !el.classList.contains('blob') && !el.classList.contains('cta-gradient')
+      );
+      if (!inner) return;
+      inner.style.zoom = '';
+      const availH = slide.clientHeight * 0.92;
+      const contentH = inner.scrollHeight;
+      if (contentH > availH) {
+        inner.style.zoom = availH / contentH;
+      }
+    });
+  }
+
+  window.addEventListener('resize', fitSlides);
+  document.addEventListener('DOMContentLoaded', fitSlides);
+  setTimeout(fitSlides, 150);
+</script>
+
+</body>
+</html>
